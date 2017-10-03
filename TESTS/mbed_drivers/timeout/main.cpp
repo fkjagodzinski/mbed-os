@@ -72,20 +72,37 @@ void test_case_timeout()
 }
 
 Case cases[] = {
-    Case("Callback called once (with attach)", test_single_call<AttachTester<Timeout> >),
-    Case("Callback called once (with attach_us)", test_single_call<AttachUSTester<Timeout> >),
+    Case("Callback called once (attach)", test_single_call<AttachTester<Timeout> >),
+    Case("Callback called once (attach_us)", test_single_call<AttachUSTester<Timeout> >),
 
-    Case("Callback not called when cancelled (with attach)", test_cancel<AttachUSTester<Timeout> >),
-    Case("Callback not called when cancelled (with attach_us)", test_cancel<AttachUSTester<Timeout> >),
+    Case("Callback not called when cancelled (attach)", test_cancel<AttachTester<Timeout> >),
+    Case("Callback not called when cancelled (attach_us)", test_cancel<AttachUSTester<Timeout> >),
 
-    Case("Callback override (with attach)", test_override<AttachTester<Timeout> >),
-    Case("Callback override (with attach_us)", test_override<AttachUSTester<Timeout> >),
+    Case("Callback override (attach)", test_override<AttachTester<Timeout> >),
+    Case("Callback override (attach_us)", test_override<AttachUSTester<Timeout> >),
 
-    Case("Multiple timeouts running in parallel (with attach)", test_multiple<AttachTester<Timeout> >),
-    Case("Multiple timeouts running in parallel (with attach_us)", test_multiple<AttachUSTester<Timeout> >),
+    Case("Multiple timeouts running in parallel (attach)", test_multiple<AttachTester<Timeout> >),
+    Case("Multiple timeouts running in parallel (attach_us)", test_multiple<AttachUSTester<Timeout> >),
 
-    Case("Zero delay (with attach)", test_no_wait<AttachTester<Timeout> >),
-    Case("Zero delay (with attach_us)", test_no_wait<AttachUSTester<Timeout> >),
+    Case("Zero delay (attach)", test_no_wait<AttachTester<Timeout> >),
+    Case("Zero delay (attach_us)", test_no_wait<AttachUSTester<Timeout> >),
+
+    Case("500 us delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 500, SHORT_DELTA_US>),
+    Case("500 us delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 500, SHORT_DELTA_US>),
+
+    Case("1 ms delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 1000, SHORT_DELTA_US>),
+    Case("1 ms delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 1000, SHORT_DELTA_US>),
+
+    Case("1 s delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 1000000, LONG_DELTA_US>),
+    Case("1 s delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 1000000, LONG_DELTA_US>),
+
+    Case("5 s delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 5000000, LONG_DELTA_US>),
+    Case("5 s delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 5000000, LONG_DELTA_US>),
+
+#if DEVICE_SLEEP
+    Case("1 s delay during sleep (attach)", test_sleep<AttachTester<Timeout>, 1000000, LONG_DELTA_US>),
+    Case("1 s delay during sleep (attach_us)", test_sleep<AttachUSTester<Timeout>, 1000000, LONG_DELTA_US>),
+#endif
 
     Case("Timers: toggle on/off", test_case_timeout)
 };
