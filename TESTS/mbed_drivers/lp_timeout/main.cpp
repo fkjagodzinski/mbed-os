@@ -15,7 +15,7 @@
  */
 
 #if !DEVICE_LOWPOWERTIMER
-    #error [NOT_SUPPORTED] Low power timer not supported for this target
+#error [NOT_SUPPORTED] Low power timer not supported for this target
 #endif
 
 #include "utest/utest.h"
@@ -23,6 +23,7 @@
 #include "greentea-client/test_env.h"
 
 #include "mbed.h"
+#include "../timeout/timeout_tests.h"
 
 using namespace utest::v1;
 
@@ -33,7 +34,8 @@ static LowPowerTimeout lpt;
 #define LONG_TIMEOUT (100000)
 #define SHORT_TIMEOUT (600)
 
-void cb_done() {
+void cb_done()
+{
     complete = true;
 }
 
@@ -119,29 +121,48 @@ void lp_timeout_500us(void)
 
 }
 
-utest::v1::status_t greentea_failure_handler(const Case *const source, const failure_t reason) {
+utest::v1::status_t greentea_failure_handler(const Case * const source, const failure_t reason)
+{
     greentea_case_failure_abort_handler(source, reason);
     return STATUS_CONTINUE;
 }
 
 Case cases[] = {
+    Case("Callback called once (with attach)", test_single_call<AttachTester<LowPowerTimeout> >),
+    Case("Callback called once (with attach_us)", test_single_call<AttachUSTester<LowPowerTimeout> >),
+
+    Case("Callback not called when cancelled (with attach)", test_cancel<AttachUSTester<LowPowerTimeout> >),
+    Case("Callback not called when cancelled (with attach_us)", test_cancel<AttachUSTester<LowPowerTimeout> >),
+
+    Case("Callback override (with attach)", test_override<AttachTester<LowPowerTimeout> >),
+    Case("Callback override (with attach_us)", test_override<AttachUSTester<LowPowerTimeout> >),
+
+    Case("Multiple timeouts running in parallel (with attach)", test_multiple<AttachTester<LowPowerTimeout> >),
+    Case("Multiple timeouts running in parallel (with attach_us)", test_multiple<AttachUSTester<LowPowerTimeout> >),
+
+    Case("Zero delay (with attach)", test_no_wait<AttachTester<LowPowerTimeout> >),
+    Case("Zero delay (with attach_us)", test_no_wait<AttachUSTester<LowPowerTimeout> >),
+
     Case("500us LowPowerTimeout", lp_timeout_500us, greentea_failure_handler),
     Case("1ms LowPowerTimeout", lp_timeout_1ms, greentea_failure_handler),
     Case("1sec LowPowerTimeout", lp_timeout_1s, greentea_failure_handler),
     Case("5sec LowPowerTimeout", lp_timeout_5s, greentea_failure_handler),
+
 #if DEVICE_SLEEP
     Case("1sec LowPowerTimeout from sleep", lp_timeout_1s_sleep, greentea_failure_handler),
     Case("1sec LowPowerTimeout from deepsleep", lp_timeout_1s_deepsleep, greentea_failure_handler),
 #endif /* DEVICE_SLEEP */
 };
 
-utest::v1::status_t greentea_test_setup(const size_t number_of_cases) {
+utest::v1::status_t greentea_test_setup(const size_t number_of_cases)
+{
     GREENTEA_SETUP(20, "default_auto");
     return greentea_test_setup_handler(number_of_cases);
 }
 
 Specification specification(greentea_test_setup, cases, greentea_test_teardown_handler);
 
-int main() {
+int main()
+{
     Harness::run(specification);
 }
