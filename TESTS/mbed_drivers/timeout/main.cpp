@@ -15,60 +15,16 @@
  */
 #include "mbed.h"
 #include "greentea-client/test_env.h"
-#include "unity.h"
-#include "utest.h"
+#include "utest/utest.h"
+#include "unity/unity.h"
 #include "timeout_tests.h"
 
 using namespace utest::v1;
 
-#define PERIOD_US 10000
-volatile uint32_t callback_trigger_count = 0;
-static const int test_timeout = 240;
-Timeout timeout;
-
-void set_increment_count()
+utest::v1::status_t greentea_failure_handler(const Case * const source, const failure_t reason)
 {
-    timeout.attach_us(set_increment_count, PERIOD_US);
-    ++callback_trigger_count;
-}
-
-/*
- * Tests is to measure the accuracy of Timeout over a period of time
- *
- *
- * 1) DUT would start to update callback_trigger_count every milli sec
- * 2) Host would query what is current count base_time, Device responds by the callback_trigger_count
- * 3) Host after waiting for measurement stretch. It will query for device time again final_time.
- * 4) Host computes the drift considering base_time, final_time, transport delay and measurement stretch
- * 5) Finally host send the results back to device pass/fail based on tolerance.
- * 6) More details on tests can be found in timing_drift_auto.py
- *
- */
-void test_case_timeout()
-{
-    char _key[11] = { };
-    char _value[128] = { };
-    int expected_key = 1;
-
-    greentea_send_kv("timing_drift_check_start", 0);
-    timeout.attach_us(set_increment_count, PERIOD_US);
-
-    // wait for 1st signal from host
-    do {
-        greentea_parse_kv(_key, _value, sizeof(_key), sizeof(_value));
-        expected_key = strcmp(_key, "base_time");
-    } while (expected_key);
-
-    greentea_send_kv(_key, callback_trigger_count * PERIOD_US);
-
-    // wait for 2nd signal from host
-    greentea_parse_kv(_key, _value, sizeof(_key), sizeof(_value));
-    greentea_send_kv(_key, callback_trigger_count * PERIOD_US);
-
-    //get the results from host
-    greentea_parse_kv(_key, _value, sizeof(_key), sizeof(_value));
-
-    TEST_ASSERT_EQUAL_STRING_MESSAGE("pass", _key, "Host side script reported a fail...");
+    greentea_case_failure_abort_handler(source, reason);
+    return STATUS_CONTINUE;
 }
 
 Case cases[] = {
@@ -87,29 +43,40 @@ Case cases[] = {
     Case("Zero delay (attach)", test_no_wait<AttachTester<Timeout> >),
     Case("Zero delay (attach_us)", test_no_wait<AttachUSTester<Timeout> >),
 
-    Case("500 us delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 500, SHORT_DELTA_US>),
-    Case("500 us delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 500, SHORT_DELTA_US>),
+    Case("500 us delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 500, SHORT_DELTA_US>,
+            greentea_failure_handler),
+    Case("500 us delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 500, SHORT_DELTA_US>,
+            greentea_failure_handler),
 
-    Case("1 ms delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 1000, SHORT_DELTA_US>),
-    Case("1 ms delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 1000, SHORT_DELTA_US>),
+    Case("1 ms delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 1000, SHORT_DELTA_US>,
+            greentea_failure_handler),
+    Case("1 ms delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 1000, SHORT_DELTA_US>,
+            greentea_failure_handler),
 
-    Case("1 s delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 1000000, LONG_DELTA_US>),
-    Case("1 s delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 1000000, LONG_DELTA_US>),
+    Case("1 s delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 1000000, LONG_DELTA_US>,
+            greentea_failure_handler),
+    Case("1 s delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 1000000, LONG_DELTA_US>,
+            greentea_failure_handler),
 
-    Case("5 s delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 5000000, LONG_DELTA_US>),
-    Case("5 s delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 5000000, LONG_DELTA_US>),
+    Case("5 s delay accuracy (attach)", test_delay_accuracy<AttachTester<Timeout>, 5000000, LONG_DELTA_US>,
+            greentea_failure_handler),
+    Case("5 s delay accuracy (attach_us)", test_delay_accuracy<AttachUSTester<Timeout>, 5000000, LONG_DELTA_US>,
+            greentea_failure_handler),
 
 #if DEVICE_SLEEP
-    Case("1 s delay during sleep (attach)", test_sleep<AttachTester<Timeout>, 1000000, LONG_DELTA_US>),
-    Case("1 s delay during sleep (attach_us)", test_sleep<AttachUSTester<Timeout>, 1000000, LONG_DELTA_US>),
+    Case("1 s delay during sleep (attach)", test_sleep<AttachTester<Timeout>, 1000000, LONG_DELTA_US>,
+            greentea_failure_handler),
+    Case("1 s delay during sleep (attach_us)", test_sleep<AttachUSTester<Timeout>, 1000000, LONG_DELTA_US>,
+            greentea_failure_handler),
 #endif
 
-    Case("Timers: toggle on/off", test_case_timeout)
+    Case("Timing drift (attach)", test_drift<AttachTester<Timeout> >),
+    Case("Timing drift (attach_us)", test_drift<AttachUSTester<Timeout> >),
 };
 
 utest::v1::status_t greentea_test_setup(const size_t number_of_cases)
 {
-    GREENTEA_SETUP(test_timeout, "timing_drift_auto");
+    GREENTEA_SETUP(240, "timing_drift_auto");
     return greentea_test_setup_handler(number_of_cases);
 }
 

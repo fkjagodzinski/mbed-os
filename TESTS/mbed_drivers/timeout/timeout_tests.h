@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef MBED_TIMEOUT_TESTS_H
+#define MBED_TIMEOUT_TESTS_H
+
 #include "mbed.h"
-#include "rtos.h"
-#include "unity.h"
+#include "unity/unity.h"
+#include "rtos/rtos.h"
 
 #define NUM_TIMEOUTS 16
+#define DRIFT_TEST_PERIOD_US 10000
+
 const float TEST_DELAY_S = 0.01;
 const uint32_t TEST_DELAY_MS = 1000.0F * TEST_DELAY_S;
 const us_timestamp_t TEST_DELAY_US = 1000000.0F * TEST_DELAY_S;
@@ -269,6 +274,7 @@ void test_sleep(void)
     timeout.detach();
 }
 
+#if DEVICE_LOWPOWERTIMER
 /** Template for tests: timeout during deepsleep
  *
  * Test timeout during deepsleep
@@ -317,4 +323,88 @@ void test_deepsleep(void)
 
     timeout.detach();
 }
+#endif
+#endif
+
+template<typename TimeoutTesterType>
+class TimeoutDriftTester {
+public:
+    TimeoutDriftTester(us_timestamp_t period = 1000) :
+            _callback_count(0), _period(period), _timeout()
+    {
+    }
+
+    void reschedule_callback(void)
+    {
+        _timeout.attach_callback(mbed::callback(this, &TimeoutDriftTester::reschedule_callback), _period);
+        _callback_count++;
+    }
+
+    void detach_callback(void)
+    {
+        _timeout.detach();
+    }
+
+    uint32_t get_callback_count(void)
+    {
+        return _callback_count;
+    }
+
+private:
+    volatile uint32_t _callback_count;
+    us_timestamp_t _period;
+    TimeoutTesterType _timeout;
+};
+
+/** Template for tests: accuracy of timeout delay scheduled repeatedly
+ *
+ * Test time drift -- device part
+ * Given a Timeout object with a callback repeatedly attached with @a attach()
+ * When the testing host computes test duration based on values received from uC
+ * Then computed time and actual time measured by host are equal within given tolerance
+ *
+ * Test time drift -- device part
+ * Given a Timeout object with a callback repeatedly attached with @a attach_us()
+ * When the testing host computes test duration based on values received from uC
+ * Then computed time and actual time measured by host are equal within given tolerance
+ *
+ * Original description:
+ * 1) DUT would start to update callback_trigger_count every milli sec
+ * 2) Host would query what is current count base_time, Device responds by the callback_trigger_count
+ * 3) Host after waiting for measurement stretch. It will query for device time again final_time.
+ * 4) Host computes the drift considering base_time, final_time, transport delay and measurement stretch
+ * 5) Finally host send the results back to device pass/fail based on tolerance.
+ * 6) More details on tests can be found in timing_drift_auto.py
+ */
+template<typename T>
+void test_drift(void)
+{
+    char _key[11] = { };
+    char _value[128] = { };
+    int expected_key = 1;
+    TimeoutDriftTester<T> timeout(DRIFT_TEST_PERIOD_US);
+
+    greentea_send_kv("timing_drift_check_start", 0);
+    timeout.reschedule_callback();
+
+    // wait for 1st signal from host
+    do {
+        greentea_parse_kv(_key, _value, sizeof(_key), sizeof(_value));
+        expected_key = strcmp(_key, "base_time");
+    } while (expected_key);
+
+    greentea_send_kv(_key, timeout.get_callback_count() * DRIFT_TEST_PERIOD_US);
+
+    // wait for 2nd signal from host
+    greentea_parse_kv(_key, _value, sizeof(_key), sizeof(_value));
+    greentea_send_kv(_key, timeout.get_callback_count() * DRIFT_TEST_PERIOD_US);
+
+    timeout.detach_callback();
+
+    //get the results from host
+    greentea_parse_kv(_key, _value, sizeof(_key), sizeof(_value));
+
+    TEST_ASSERT_EQUAL_STRING_MESSAGE("pass", _key, "Host script reported a failure");
+}
+
 #endif

@@ -18,10 +18,10 @@
 #error [NOT_SUPPORTED] Low power timer not supported for this target
 #endif
 
+#include "mbed.h"
+#include "greentea-client/test_env.h"
 #include "utest/utest.h"
 #include "unity/unity.h"
-#include "greentea-client/test_env.h"
-#include "mbed.h"
 #include "../timeout/timeout_tests.h"
 
 using namespace utest::v1;
@@ -79,11 +79,14 @@ Case cases[] = {
     Case("1 s delay during deepsleep (attach_us)", test_deepsleep<AttachUSTester<LowPowerTimeout>, 1000000, LONG_DELTA_US>,
             greentea_failure_handler),
 #endif
+
+    Case("Timing drift (attach)", test_drift<AttachTester<LowPowerTimeout> >),
+    Case("Timing drift (attach_us)", test_drift<AttachUSTester<LowPowerTimeout> >),
 };
 
 utest::v1::status_t greentea_test_setup(const size_t number_of_cases)
 {
-    GREENTEA_SETUP(20, "default_auto");
+    GREENTEA_SETUP(240, "timing_drift_auto");
     return greentea_test_setup_handler(number_of_cases);
 }
 
