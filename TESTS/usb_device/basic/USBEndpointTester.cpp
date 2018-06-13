@@ -52,10 +52,10 @@
 #define TEST_SIZE_EP_ISO_MAX    (1023)
 #define TEST_SIZE_EP_ISO_MIN    (1)
 #define TEST_SIZE_EP_ISO_0      (0)
-#define TEST_SIZE_EP_ISO_1      (0)
-#define TEST_SIZE_EP_ISO_2      (0)
-#define TEST_SIZE_EP_ISO_3      (0)
-#define TEST_SIZE_EP_ISO_4      (0)
+#define TEST_SIZE_EP_ISO_1      TEST_SIZE_EP_ISO_MIN
+#define TEST_SIZE_EP_ISO_2      (64)
+#define TEST_SIZE_EP_ISO_3      (128)
+#define TEST_SIZE_EP_ISO_4      (256)
 
 #define EP_BULK_OUT 0
 #define EP_BULK_IN  1
@@ -770,18 +770,28 @@ void USBEndpointTester::_cb_iso_out(usb_ep_t endpoint)
 {
     _cnt_cb_iso_out++;
     uint32_t rx_size = read_finish(endpoint);
-    // Send data back to host using the IN endpoint.
-    memset(_endpoint_buffs[EP_ISO_IN], 0, (*_endpoint_configs)[EP_ISO_IN].max_packet);
-    memcpy(_endpoint_buffs[EP_ISO_IN], _endpoint_buffs[EP_ISO_OUT], rx_size);
-    write_start(_endpoints[EP_ISO_IN], _endpoint_buffs[EP_ISO_IN], rx_size);
+
+    if (rx_size > 0) {
+        // Send data back to host using the IN endpoint.
+        memset(_endpoint_buffs[EP_ISO_IN], 0, (*_endpoint_configs)[EP_ISO_IN].max_packet);
+        memcpy(_endpoint_buffs[EP_ISO_IN], _endpoint_buffs[EP_ISO_OUT], rx_size);
+        write_start(_endpoints[EP_ISO_IN], _endpoint_buffs[EP_ISO_IN], (*_endpoint_configs)[EP_ISO_IN].max_packet);
+    } else {
+        read_start(_endpoints[EP_ISO_OUT], _endpoint_buffs[EP_ISO_OUT], (*_endpoint_configs)[EP_ISO_OUT].max_packet);
+    }
 }
 
 void USBEndpointTester::_cb_iso_in(usb_ep_t endpoint)
 {
     _cnt_cb_iso_in++;
-    write_finish(endpoint);
-    // Receive more data from the host using the OUT endpoint.
-    read_start(_endpoints[EP_ISO_OUT], _endpoint_buffs[EP_ISO_OUT], (*_endpoint_configs)[EP_ISO_OUT].max_packet);
+    uint32_t tx_size = write_finish(endpoint);
+
+    if (tx_size > 0) {
+        // Receive more data from the host using the OUT endpoint.
+        read_start(_endpoints[EP_ISO_OUT], _endpoint_buffs[EP_ISO_OUT], (*_endpoint_configs)[EP_ISO_OUT].max_packet);
+    } else {
+        write_start(_endpoints[EP_ISO_IN], _endpoint_buffs[EP_ISO_IN], (*_endpoint_configs)[EP_ISO_IN].max_packet);
+    }
 }
 
 void USBEndpointTester::start_ep_in_abort_test()
