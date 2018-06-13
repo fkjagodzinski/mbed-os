@@ -953,7 +953,7 @@ def find_ep_pair(intf, endpoint_type):
     return ep_out, ep_in
 
 
-def loopback_ep_test(ep_out, ep_in, payload_size):
+def loopback_ep_test(ep_out, ep_in, payload_size, num_retries=1, retry_delay=0.001):
     """Send and receive random data using OUT/IN endpoint pair.
 
     Verify that data received from IN endpoint is equal to
@@ -961,12 +961,28 @@ def loopback_ep_test(ep_out, ep_in, payload_size):
     Raise a RuntimeError if data does not match.
     """
     payload_out = array.array('B', (random.randint(0x00, 0xff) for _ in range(payload_size)))
-    ep_out.write(payload_out)
+    bytes_sent = ep_out.write(payload_out)
+    tx_retry = 1
+    while bytes_sent != payload_size and tx_retry < num_retries:
+        time.sleep(retry_delay)
+        bytes_sent = ep_out.write(payload_out)
+        tx_retry += 1
+    if bytes_sent != payload_size:
+        raise_unconditionally(lineno(), 'Unable to send data to endpoint {:#04x}, tried {} times.'
+                              .format(ep_out.bEndpointAddress, tx_retry))
     payload_in = ep_in.read(ep_in.wMaxPacketSize)
+    rx_retry = 1
+    while len(payload_in) != payload_size and rx_retry < num_retries:
+        time.sleep(retry_delay)
+        payload_in = ep_in.read(ep_in.wMaxPacketSize)
+        rx_retry += 1
+    if len(payload_in) != payload_size:
+        raise_unconditionally(lineno(), 'Unable to receive data from endpoint {:#04x}, tried {} times.'
+                              .format(ep_out.bEndpointAddress, rx_retry))
     raise_if_different(payload_out, payload_in, lineno(), 'Payloads mismatch.')
 
-
-def random_size_loopback_ep_test(ep_out, ep_in, failure, error, seconds, log, min_payload_size=1):
+def random_size_loopback_ep_test(ep_out, ep_in, failure, error, seconds, log, min_payload_size=1,
+                                 lb_num_retries=1, lb_retry_delay=0.001):
     """Repeat data transfer test for OUT/IN endpoint pair for a given time.
 
     Set a failure Event if OUT/IN data verification fails.
@@ -976,7 +992,7 @@ def random_size_loopback_ep_test(ep_out, ep_in, failure, error, seconds, log, mi
     while time.time() < end_ts and not failure.is_set() and not error.is_set():
         payload_size = random.randint(min_payload_size, ep_out.wMaxPacketSize)
         try:
-            loopback_ep_test(ep_out, ep_in, payload_size)
+            loopback_ep_test(ep_out, ep_in, payload_size, lb_num_retries, lb_retry_delay)
         except RuntimeError as err:
             log(err)
             failure.set()
@@ -1108,14 +1124,14 @@ def ep_test_data_correctness(dev, log, verbose=False):
             except usb.USBError as err:
                 raise_unconditionally(lineno(), USB_ERROR_FMT.format(err, interrupt_out, interrupt_in, payload_size))
 
-#         if verbose:
-#             log('Testing OUT/IN data correctness for isochronous endnpoint pair.')
-#         payload_size = 128 # range(1, iso_out.wMaxPacketSize + 1):
-#         try:
-#             loopback_ep_test(iso_out, iso_in, payload_size)
-#         except usb.USBError as err:
-#             log(err)
-#             raise_unconditionally(lineno(), USB_ERROR_FMT.format(err, iso_out, iso_in, payload_size))
+        if verbose:
+            log('Testing OUT/IN data correctness for isochronous endnpoint pair.')
+        payload_size = iso_out.wMaxPacketSize
+        for _ in range(8):
+            try:
+                loopback_ep_test(iso_out, iso_in, payload_size, num_retries=30, retry_delay=0.01)
+            except usb.USBError as err:
+                raise_unconditionally(lineno(), USB_ERROR_FMT.format(err, iso_out, iso_in, payload_size))
 
 
 def ep_test_halt(dev, log, verbose=False):
@@ -1137,15 +1153,12 @@ def ep_test_halt(dev, log, verbose=False):
 
         bulk_out, bulk_in = find_ep_pair(intf, usb.ENDPOINT_TYPE_BULK)
         interrupt_out, interrupt_in = find_ep_pair(intf, usb.ENDPOINT_TYPE_INTERRUPT)
-        iso_out, iso_in = find_ep_pair(intf, usb.ENDPOINT_TYPE_ISOCHRONOUS)
 
         if verbose:
             log('\tbulk_out      {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(bulk_out))
             log('\tbulk_in       {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(bulk_in))
             log('\tinterrupt_out {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(interrupt_out))
             log('\tinterrupt_in  {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(interrupt_in))
-            log('\tiso_out       {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(iso_out))
-            log('\tiso_in        {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(iso_in))
 
         if verbose:
             log('Testing endpoint halt at a random point of bulk transmission.')
@@ -1176,6 +1189,7 @@ def ep_test_parallel_transfers(dev, log, verbose=False):
     Then all transfers succeed
         and data received equals data sent for every endpoint pair
     """
+    verbose = True
     cfg = dev.get_active_configuration()
     for intf in cfg:
         log('interface {}, alt {} -- '.format(intf.bInterfaceNumber, intf.bAlternateSetting), end='')
@@ -1198,7 +1212,7 @@ def ep_test_parallel_transfers(dev, log, verbose=False):
             log('\tiso_in        {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(iso_in))
 
         if verbose:
-            log('Testing simultaneous transfers through bulk and interrupt endpoint pairs.')
+            log('Testing simultaneous transfers through bulk, interrupt and isochronous endpoint pairs.')
         test_error = Event()
         test_failure = Event()
         test_kwargs_bulk_ep = {
@@ -1215,8 +1229,18 @@ def ep_test_parallel_transfers(dev, log, verbose=False):
             'error': test_error,
             'seconds': 1.0,
             'log': log}
+        test_kwargs_iso_ep = {
+            'ep_out': iso_out,
+            'ep_in': iso_in,
+            'failure': test_failure,
+            'error': test_error,
+            'seconds': 1.0,
+            'log': log,
+            'min_payload_size': iso_out.wMaxPacketSize,  # constant payload size
+            'lb_num_retries': 30,
+            'lb_retry_delay': 0.01}
         ep_test_threads = []
-        for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep):
+        for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep, test_kwargs_iso_ep):
             ep_test_threads.append(Thread(target=random_size_loopback_ep_test, kwargs=kwargs))
         for t in ep_test_threads:
             t.start()
@@ -1259,7 +1283,7 @@ def ep_test_parallel_transfers_ctrl(dev, log, verbose=False):
             log('\tiso_in        {0.bEndpointAddress:#04x}, {0.wMaxPacketSize:02} B'.format(iso_in))
 
         if verbose:
-            log('Testing parallel data transfers through bulk, interrupt & control endpoint pairs.')
+            log('Testing parallel data transfers through bulk, interrupt, isochronous & control endpoint pairs.')
         test_error = Event()
         test_failure = Event()
         test_kwargs_bulk_ep = {
@@ -1276,8 +1300,18 @@ def ep_test_parallel_transfers_ctrl(dev, log, verbose=False):
             'error': test_error,
             'seconds': 1.0,
             'log': log}
+        test_kwargs_iso_ep = {
+            'ep_out': iso_out,
+            'ep_in': iso_in,
+            'failure': test_failure,
+            'error': test_error,
+            'seconds': 1.0,
+            'log': log,
+            'min_payload_size': iso_out.wMaxPacketSize,  # constant payload size
+            'lb_num_retries': 30,
+            'lb_retry_delay': 0.01}
         ep_test_threads = []
-        for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep):
+        for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep, test_kwargs_iso_ep):
             ep_test_threads.append(Thread(target=random_size_loopback_ep_test, kwargs=kwargs))
         for t in ep_test_threads:
             t.start()
