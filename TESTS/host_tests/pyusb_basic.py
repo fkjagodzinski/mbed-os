@@ -952,6 +952,8 @@ def find_ep_pair(intf, endpoint_type):
                        .format(ENDPOINT_TYPE_NAMES[endpoint_type]))
     return ep_out, ep_in
 
+__max_tx_retry = 0
+__max_rx_retry = 0
 
 def loopback_ep_test(ep_out, ep_in, payload_size, num_retries=1, retry_delay=0.001):
     """Send and receive random data using OUT/IN endpoint pair.
@@ -960,6 +962,7 @@ def loopback_ep_test(ep_out, ep_in, payload_size, num_retries=1, retry_delay=0.0
     data sent to OUT endpoint.
     Raise a RuntimeError if data does not match.
     """
+    global __max_tx_retry, __max_rx_retry
     payload_out = array.array('B', (random.randint(0x00, 0xff) for _ in range(payload_size)))
     bytes_sent = ep_out.write(payload_out)
     tx_retry = 1
@@ -967,6 +970,8 @@ def loopback_ep_test(ep_out, ep_in, payload_size, num_retries=1, retry_delay=0.0
         time.sleep(retry_delay)
         bytes_sent = ep_out.write(payload_out)
         tx_retry += 1
+    if tx_retry > __max_tx_retry:
+        __max_tx_retry = tx_retry
     if bytes_sent != payload_size:
         raise_unconditionally(lineno(), 'Unable to send data to endpoint {:#04x}, tried {} times.'
                               .format(ep_out.bEndpointAddress, tx_retry))
@@ -976,6 +981,8 @@ def loopback_ep_test(ep_out, ep_in, payload_size, num_retries=1, retry_delay=0.0
         time.sleep(retry_delay)
         payload_in = ep_in.read(ep_in.wMaxPacketSize)
         rx_retry += 1
+    if rx_retry > __max_rx_retry:
+        __max_rx_retry = rx_retry
     if len(payload_in) != payload_size:
         raise_unconditionally(lineno(), 'Unable to receive data from endpoint {:#04x}, tried {} times.'
                               .format(ep_out.bEndpointAddress, rx_retry))
@@ -1087,6 +1094,7 @@ def ep_test_data_correctness(dev, log, verbose=False):
         and then the device sends data back to host using an IN endpoint
     Then data sent and received by host is equal for every endpoint pair
     """
+    verbose = True
     cfg = dev.get_active_configuration()
     for intf in cfg:
         log('interface {}, alt {} -- '.format(intf.bInterfaceNumber, intf.bAlternateSetting), end='')
@@ -1129,9 +1137,11 @@ def ep_test_data_correctness(dev, log, verbose=False):
         payload_size = iso_out.wMaxPacketSize
         for _ in range(8):
             try:
-                loopback_ep_test(iso_out, iso_in, payload_size, num_retries=30, retry_delay=0.01)
+                loopback_ep_test(iso_out, iso_in, payload_size, num_retries=500, retry_delay=0.01)
             except usb.USBError as err:
                 raise_unconditionally(lineno(), USB_ERROR_FMT.format(err, iso_out, iso_in, payload_size))
+
+    log('MAX iso retries: TX', __max_tx_retry, 'RX', __max_rx_retry)
 
 
 def ep_test_halt(dev, log, verbose=False):
@@ -1189,7 +1199,6 @@ def ep_test_parallel_transfers(dev, log, verbose=False):
     Then all transfers succeed
         and data received equals data sent for every endpoint pair
     """
-    verbose = True
     cfg = dev.get_active_configuration()
     for intf in cfg:
         log('interface {}, alt {} -- '.format(intf.bInterfaceNumber, intf.bAlternateSetting), end='')
@@ -1237,7 +1246,7 @@ def ep_test_parallel_transfers(dev, log, verbose=False):
             'seconds': 1.0,
             'log': log,
             'min_payload_size': iso_out.wMaxPacketSize,  # constant payload size
-            'lb_num_retries': 30,
+            'lb_num_retries': 300,
             'lb_retry_delay': 0.01}
         ep_test_threads = []
         for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep, test_kwargs_iso_ep):
@@ -1308,7 +1317,7 @@ def ep_test_parallel_transfers_ctrl(dev, log, verbose=False):
             'seconds': 1.0,
             'log': log,
             'min_payload_size': iso_out.wMaxPacketSize,  # constant payload size
-            'lb_num_retries': 30,
+            'lb_num_retries': 300,
             'lb_retry_delay': 0.01}
         ep_test_threads = []
         for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep, test_kwargs_iso_ep):
