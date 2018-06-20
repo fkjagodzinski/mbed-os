@@ -111,6 +111,23 @@ ENDPOINT_TYPE_NAMES = {
     usb.ENDPOINT_TYPE_INTERRUPT: 'INTERRUPT',
     usb.ENDPOINT_TYPE_ISOCHRONOUS: 'ISOCHRONOUS'}
 
+# There is a bug in libusb implementation for some platforms:
+# 'libusb_get_max_iso_packet_size()' always returns the value of wMaxPacketSize
+# corresponding to the first endpoint found, ignoring the fact there may be
+# more than one altsetting for an interface.
+#
+# See https://github.com/libusb/libusb/issues/36 for reference.
+#
+# Currently multiple altsettings are used to test mbed device endpoints,
+# so only selected plarforms are able to run isochronous endpoint tests.
+
+PLATFORMS_SUPPORTING_ISO_EP_TRANSFERS = (
+    'win',)
+ISO_UNSUPPORTED_PLATFORM_MSG = ' '.join([
+    'This version of libusb backend ({!r})'.format(sys.platform),
+    'does not correctly support isochronous endpoints in multiple altsettings',
+    '-- SKIPPING ISOCHRONOUS ENDPOINT TRANSFERS.'])
+
 class PyusbBasicTest(BaseHostTest):
 
     def _callback_control_basic_test(self, key, value, timestamp):
@@ -1124,6 +1141,9 @@ def ep_test_data_correctness(dev, log, verbose=False):
             except usb.USBError as err:
                 raise_unconditionally(lineno(), USB_ERROR_FMT.format(err, interrupt_out, interrupt_in, payload_size))
 
+        if not sys.platform.startswith(PLATFORMS_SUPPORTING_ISO_EP_TRANSFERS):
+            log(ISO_UNSUPPORTED_PLATFORM_MSG)
+            continue
         if verbose:
             log('Testing OUT/IN data correctness for isochronous endnpoint pair.')
         payload_size = iso_out.wMaxPacketSize
@@ -1239,8 +1259,13 @@ def ep_test_parallel_transfers(dev, log, verbose=False):
             'min_payload_size': iso_out.wMaxPacketSize,  # constant payload size
             'lb_num_retries': 30,
             'lb_retry_delay': 0.01}
+        ep_specific_kwargs = [test_kwargs_bulk_ep, test_kwargs_interrupt_ep]
+        if not sys.platform.startswith(PLATFORMS_SUPPORTING_ISO_EP_TRANSFERS):
+            log(ISO_UNSUPPORTED_PLATFORM_MSG)
+        else:
+            ep_specific_kwargs.append(test_kwargs_iso_ep)
         ep_test_threads = []
-        for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep, test_kwargs_iso_ep):
+        for kwargs in ep_specific_kwargs:
             ep_test_threads.append(Thread(target=random_size_loopback_ep_test, kwargs=kwargs))
         for t in ep_test_threads:
             t.start()
@@ -1310,8 +1335,13 @@ def ep_test_parallel_transfers_ctrl(dev, log, verbose=False):
             'min_payload_size': iso_out.wMaxPacketSize,  # constant payload size
             'lb_num_retries': 30,
             'lb_retry_delay': 0.01}
+        ep_specific_kwargs = [test_kwargs_bulk_ep, test_kwargs_interrupt_ep]
+        if not sys.platform.startswith(PLATFORMS_SUPPORTING_ISO_EP_TRANSFERS):
+            log(ISO_UNSUPPORTED_PLATFORM_MSG)
+        else:
+            ep_specific_kwargs.append(test_kwargs_iso_ep)
         ep_test_threads = []
-        for kwargs in (test_kwargs_bulk_ep, test_kwargs_interrupt_ep, test_kwargs_iso_ep):
+        for kwargs in ep_specific_kwargs:
             ep_test_threads.append(Thread(target=random_size_loopback_ep_test, kwargs=kwargs))
         for t in ep_test_threads:
             t.start()
