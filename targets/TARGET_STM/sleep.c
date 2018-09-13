@@ -52,7 +52,7 @@ static void wait_loop(uint32_t timeout)
 
 
 // On L4 platforms we've seen unstable PLL CLK configuraiton
-// when DEEP SLEEP exits just few µs after being entered
+// when DEEP SLEEP exits just few ï¿½s after being entered
 // So we need to force MSI usage before setting clocks again
 static void ForcePeriphOutofDeepSleep(void)
 {
@@ -158,6 +158,7 @@ void hal_sleep(void)
 }
 
 extern int serial_is_tx_ongoing(void);
+void set_D0(int);
 
 void hal_deepsleep(void)
 {
@@ -173,6 +174,7 @@ void hal_deepsleep(void)
 
     // Disable IRQs
     core_util_critical_section_enter();
+    set_D0(1);
 
     save_timer_ctx();
 
@@ -215,6 +217,7 @@ void hal_deepsleep(void)
     restore_timer_ctx();
 
     // Enable IRQs
+    set_D0(0);
     core_util_critical_section_exit();
 }
 

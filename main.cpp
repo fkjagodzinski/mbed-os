@@ -9,6 +9,27 @@
 #define SLEEP_DURATION_US 100000ULL
 #define SERIAL_FLUSH_TIME_MS 20
 
+DigitalOut d0(D0);
+extern "C" void set_D0(int val)
+{
+    d0.write(val);
+}
+DigitalOut d1(D1);
+extern "C" void set_D1(int val)
+{
+    d1.write(val);
+}
+DigitalOut d2(D2);
+extern "C" void set_D2(int val)
+{
+    d2.write(val);
+}
+DigitalOut d3(D3);
+extern "C" void set_D3(int val)
+{
+    d3.write(val);
+}
+
 void wakeup_callback(volatile int *wakeup_flag)
 {
     (*wakeup_flag)++;

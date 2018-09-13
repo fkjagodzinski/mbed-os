@@ -119,18 +119,27 @@ static us_timestamp_t convert_timestamp(us_timestamp_t ref, timestamp_t timestam
     return result;
 }
 
+void set_D1(int);
+void set_D1_for_us_ticker(int val, const ticker_data_t *const ticker)
+{
+    if (ticker != get_us_ticker_data()) return;
+    set_D1(val);
+}
 /**
  * Update the present timestamp value of a ticker.
  */
 static void update_present_time(const ticker_data_t *const ticker)
 {
+    set_D1_for_us_ticker(1, ticker);
     ticker_event_queue_t *queue = ticker->queue;
     if (queue->suspended) {
+        set_D1_for_us_ticker(0, ticker);
         return;
     }
     uint32_t ticker_time = ticker->interface->read();
     if (ticker_time == ticker->queue->tick_last_read) {
         // No work to do
+        set_D1_for_us_ticker(0, ticker);
         return;
     }
 
@@ -169,6 +178,7 @@ static void update_present_time(const ticker_data_t *const ticker)
 
     // Update current time
     queue->present_time += elapsed_us;
+    set_D1_for_us_ticker(0, ticker);
 }
 
 /**
@@ -413,14 +423,22 @@ timestamp_t ticker_read(const ticker_data_t *const ticker)
     return ticker_read_us(ticker);
 }
 
+void set_D2(int);
+void set_D2_for_us_ticker(int val, const ticker_data_t *const ticker)
+{
+    if (ticker != get_us_ticker_data()) return;
+    set_D2(val);
+}
 us_timestamp_t ticker_read_us(const ticker_data_t *const ticker)
 {
+    set_D2_for_us_ticker(1, ticker);
     initialize(ticker);
 
     core_util_critical_section_enter();
     update_present_time(ticker);
     core_util_critical_section_exit();
 
+    set_D2_for_us_ticker(0, ticker);
     return ticker->queue->present_time;
 }
 
