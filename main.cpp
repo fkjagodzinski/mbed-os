@@ -9,6 +9,27 @@
 #define SLEEP_DURATION_US 100000ULL
 #define SERIAL_FLUSH_TIME_MS 20
 
+DigitalOut d0(D4);
+extern "C" void set_D0(int val)
+{
+    d0.write(val);
+}
+DigitalOut d1(D5);
+extern "C" void set_D1(int val)
+{
+    d1.write(val);
+}
+DigitalOut d2(D2);
+extern "C" void set_D2(int val)
+{
+    d2.write(val);
+}
+DigitalOut d3(D3);
+extern "C" void set_D3(int val)
+{
+    d3.write(val);
+}
+
 void wakeup_callback(volatile int *wakeup_flag)
 {
     (*wakeup_flag)++;
@@ -16,14 +37,22 @@ void wakeup_callback(volatile int *wakeup_flag)
 
 int main()
 {
+    set_D3(1);
 #if NO_OS_INTERFERENCE
     // Suspend the RTOS kernel scheduler to prevent interference with duration of sleep.
     osKernelSuspend();
 #if DEVICE_LPTICKER && (LPTICKER_DELAY_TICKS > 0)
     // Suspend the low power ticker wrapper to prevent interference with deep sleep lock.
     lp_ticker_wrapper_suspend();
+    printf("wrapper suspended\r\n");
 #endif
 #endif
+//    ticker_read(get_us_ticker_data());
+    ticker_read(get_lp_ticker_data());
+
+    set_D3(0);
+    set_D3(1);
+    while (1);
 
     volatile int wakeup_flag;
     LowPowerTimeout lp_timeout;
