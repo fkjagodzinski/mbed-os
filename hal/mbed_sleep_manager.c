@@ -157,8 +157,12 @@ void sleep_tracker_unlock(const char *const filename, int line)
 
 #endif // MBED_SLEEP_TRACING_ENABLED
 
+void set_D0(int);
+void set_D1(int);
+
 void sleep_manager_lock_deep_sleep_internal(void)
 {
+    set_D0(1);
     core_util_critical_section_enter();
     if (deep_sleep_lock == USHRT_MAX) {
         core_util_critical_section_exit();
@@ -166,10 +170,12 @@ void sleep_manager_lock_deep_sleep_internal(void)
     }
     core_util_atomic_incr_u16(&deep_sleep_lock, 1);
     core_util_critical_section_exit();
+    set_D0(0);
 }
 
 void sleep_manager_unlock_deep_sleep_internal(void)
 {
+    set_D1(1);
     core_util_critical_section_enter();
     if (deep_sleep_lock == 0) {
         core_util_critical_section_exit();
@@ -177,6 +183,7 @@ void sleep_manager_unlock_deep_sleep_internal(void)
     }
     core_util_atomic_decr_u16(&deep_sleep_lock, 1);
     core_util_critical_section_exit();
+    set_D1(0);
 }
 
 bool sleep_manager_can_deep_sleep(void)

@@ -28,8 +28,11 @@ LowPowerTickerWrapper::LowPowerTickerWrapper(const ticker_data_t *data, const ti
     core_util_critical_section_exit();
 }
 
+extern "C" void set_D3(int);
+
 void LowPowerTickerWrapper::irq_handler(ticker_irq_handler_type handler)
 {
+    set_D3(1);
     core_util_critical_section_enter();
 
     if (_suspended) {
@@ -37,6 +40,7 @@ void LowPowerTickerWrapper::irq_handler(ticker_irq_handler_type handler)
             handler(&data);
         }
         core_util_critical_section_exit();
+        set_D3(0);
         return;
     }
 
@@ -54,6 +58,7 @@ void LowPowerTickerWrapper::irq_handler(ticker_irq_handler_type handler)
     }
 
     core_util_critical_section_exit();
+    set_D3(0);
 }
 
 void LowPowerTickerWrapper::suspend()
