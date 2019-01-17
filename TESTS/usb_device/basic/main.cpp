@@ -46,7 +46,7 @@
 using namespace utest::v1;
 
 // Print callback counters for endpoint tests
-#define EP_DBG 0
+#define EP_DBG 1
 
 static USBPhy *get_phy()
 {
@@ -628,22 +628,22 @@ void repeated_construction_destruction_test()
 }
 
 Case cases[] = {
-    Case("usb control basic test", control_basic_test),
-    Case("usb control stall test", control_stall_test),
-    Case("usb control sizes test", control_sizes_test),
-    Case("usb control stress test", control_stress_test),
-    Case("usb device reset test", device_reset_test),
-    Case("usb soft reconnection test", device_soft_reconnection_test),
-#if SUSPEND_RESUME_TEST_SUPPORTED
-    Case("usb device suspend/resume test", device_suspend_resume_test),
-#endif
-    Case("usb repeated construction destruction test", repeated_construction_destruction_test),
-    Case("endpoint test data correctness", ep_test_data_correctness),
+//     Case("usb control basic test", control_basic_test),
+//     Case("usb control stall test", control_stall_test),
+//     Case("usb control sizes test", control_sizes_test),
+//     Case("usb control stress test", control_stress_test),
+//     Case("usb device reset test", device_reset_test),
+//     Case("usb soft reconnection test", device_soft_reconnection_test),
+// #if SUSPEND_RESUME_TEST_SUPPORTED
+//     Case("usb device suspend/resume test", device_suspend_resume_test),
+// #endif
+//     Case("usb repeated construction destruction test", repeated_construction_destruction_test),
+//     Case("endpoint test data correctness", ep_test_data_correctness),
     Case("endpoint test halt", ep_test_halt),
-    Case("endpoint test parallel transfers", ep_test_parallel_transfers),
-    Case("endpoint test parallel transfers ctrl", ep_test_parallel_transfers_ctrl),
-    Case("endpoint test abort", ep_test_abort),
-    Case("endpoint test data toggle reset", ep_test_data_toggle)
+//     Case("endpoint test parallel transfers", ep_test_parallel_transfers),
+//     Case("endpoint test parallel transfers ctrl", ep_test_parallel_transfers_ctrl),
+//     Case("endpoint test abort", ep_test_abort),
+//     Case("endpoint test data toggle reset", ep_test_data_toggle)
 };
 
 utest::v1::status_t greentea_test_setup(const size_t number_of_cases)

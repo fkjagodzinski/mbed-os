@@ -1022,14 +1022,23 @@ def halt_ep_test(dev, ep_out, ep_in, ep_to_halt, log):
     delayed_halt.start()
     # Keep transferring data to and from the device until one of the endpoints
     # is halted.
+    rep = 0
     try:
         while delayed_halt.is_alive():
             if ctrl_error.is_set():
                 raise_unconditionally(lineno(), 'Halting endpoint {0.bEndpointAddress:#04x} failed'
                                       .format(ep_to_halt))
             try:
-                loopback_ep_test(ep_out, ep_in, ep_out.wMaxPacketSize)
+                # loopback_ep_test(ep_out, ep_in, ep_out.wMaxPacketSize)
+                byte = 0xff - (rep % 0xff)
+                payload_out = array.array('B', (byte for _ in range(ep_out.wMaxPacketSize)))
+                ep_out.write(payload_out)
+                payload_in = ep_in.read(ep_in.wMaxPacketSize)
+                raise_if_different(payload_out, payload_in, lineno(), 'Payloads mismatch.')
+                rep += 1
             except usb.core.USBError as err:
+                log('ep {:#04x}, rep {:3}, byte {:#04x}, got {!r}'
+                    .format(ep_to_halt.bEndpointAddress, rep, byte, err))
                 try:
                     ep_status = usb.control.get_status(dev, ep_to_halt)
                 except usb.core.USBError as err:
@@ -1130,7 +1139,7 @@ def ep_test_data_correctness(dev, log, verbose=False):
 #             raise_unconditionally(lineno(), USB_ERROR_FMT.format(err, iso_out, iso_in, payload_size))
 
 
-def ep_test_halt(dev, log, verbose=False):
+def ep_test_halt(dev, log, verbose=True):
     """Test endpoint halt for every OUT/IN endpoint pair.
 
     Given a USB device with multiple OUT/IN endpoint pairs
@@ -1161,23 +1170,22 @@ def ep_test_halt(dev, log, verbose=False):
 
         if verbose:
             log('Testing endpoint halt at a random point of bulk transmission.')
-        end_ts = time.time() + 1.0
-        while time.time() < end_ts:
+        for _ in range(25):
             halt_ep_test(dev, bulk_out, bulk_in, bulk_out, log)
             bulk_out.clear_halt()
-            request_endpoint_read_start(dev, bulk_out)
+            # request_endpoint_read_start(dev, bulk_out)
             halt_ep_test(dev, bulk_out, bulk_in, bulk_in, log)
             bulk_in.clear_halt()
+            request_endpoint_read_start(dev, bulk_out)
 
-        if verbose:
-            log('Testing endpoint halt at a random point of interrupt transmission.')
-        end_ts = time.time() + 1.0
-        while time.time() < end_ts:
-            halt_ep_test(dev, interrupt_out, interrupt_in, interrupt_out, log)
-            interrupt_out.clear_halt()
-            request_endpoint_read_start(dev, interrupt_out)
-            halt_ep_test(dev, interrupt_out, interrupt_in, interrupt_in, log)
-            interrupt_in.clear_halt()
+        # if verbose:
+        #     log('Testing endpoint halt at a random point of interrupt transmission.')
+        # for _ in range(10):
+        #     halt_ep_test(dev, interrupt_out, interrupt_in, interrupt_out, log)
+        #     interrupt_out.clear_halt()
+        #     # request_endpoint_read_start(dev, interrupt_out)
+        #     halt_ep_test(dev, interrupt_out, interrupt_in, interrupt_in, log)
+        #     interrupt_in.clear_halt()
 
 
 def ep_test_parallel_transfers(dev, log, verbose=False):
