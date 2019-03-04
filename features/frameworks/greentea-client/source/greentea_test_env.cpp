@@ -95,7 +95,16 @@ void _GREENTEA_SETUP_COMMON(const int timeout, const char *host_test_name, char 
  */
 extern "C" void GREENTEA_SETUP(const int timeout, const char *host_test_name) {
 #if ! defined(NO_GREENTEA)
+    greentea_write_string("Musca B eflash Firmware Version 3.0\r\n");
+    greentea_write_string("[INF] Starting bootloader\r\n");
+    greentea_write_string("[INF] Image 0: magic= good, copy_done=0xff, image_ok=0xff\r\n");
+    greentea_write_string("[INF] Scratch: magic=unset, copy_done=0x9, image_ok=0xff\r\n");
+    greentea_write_string("[INF] Boot source: slot 0\r\n");
+    greentea_write_string("[INF] Swap type: test\r\n");
+    char _key[8] = {0};
     char _value[GREENTEA_UUID_LENGTH] = {0};
+    // XXX uncomment to see the SYNC failure
+    // greentea_parse_kv(_key, _value, sizeof(_key), GREENTEA_UUID_LENGTH);
     _GREENTEA_SETUP_COMMON(timeout, host_test_name, _value, GREENTEA_UUID_LENGTH);
 #endif
 }

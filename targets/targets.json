@@ -1505,7 +1505,8 @@
         "bootloader_supported": true,
         "overrides": {
             "network-default-interface-type": "ETHERNET"
-        }
+        },
+        "forced_reset_timeout": 10
     },
     "SDT64B": {
         "inherits": ["K64F"],
