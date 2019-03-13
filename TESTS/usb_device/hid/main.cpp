@@ -214,6 +214,7 @@ public:
     using USBHID::report_desc_length;
 };
 
+// TODO docs
 template<typename T, uint16_t PID>
 void test_get_hid_class_desc()
 {
@@ -232,6 +233,7 @@ void test_get_hid_class_desc()
     TEST_ASSERT_EQUAL_UINT16(usb_hid.report_desc_length(), host_report_desc_len);
 }
 
+// TODO docs
 template<typename T, uint16_t PID>
 void test_get_configuration_desc()
 {
@@ -246,6 +248,7 @@ void test_get_configuration_desc()
     TEST_ASSERT_EQUAL_STRING(MSG_KEY_TEST_CASE_PASSED, key);
 }
 
+// TODO docs
 template<typename T, uint16_t PID>
 void test_class_requests()
 {
@@ -260,6 +263,7 @@ void test_class_requests()
     TEST_ASSERT_EQUAL_STRING(MSG_KEY_TEST_CASE_PASSED, key);
 }
 
+// TODO docs
 template<uint8_t REPORT_SIZE> // Range [1, MAX_HID_REPORT_SIZE].
 void test_generic_raw_io()
 {
@@ -326,10 +330,6 @@ Case cases[] = {
     Case("Raw input/output, 1-byte reports", test_generic_raw_io<1>),
     Case("Raw input/output, 20-byte reports", test_generic_raw_io<20>),
     Case("Raw input/output, 64-byte reports", test_generic_raw_io<64>),
-    // TODO printf, lock?
-    // Case("Input, keyboard", test_keyboard_input),
-    // TODO scroll, move, press?
-    // Case("Input, mouse", test_mouse_input),
 };
 
 Specification specification((utest::v1::test_setup_handler_t) testsuite_setup, cases);
