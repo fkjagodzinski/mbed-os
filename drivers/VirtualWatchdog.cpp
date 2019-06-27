@@ -30,8 +30,16 @@ VirtualWatchdog::VirtualWatchdog(uint32_t timeout, const char *const str): _name
     _next = NULL;
     _max_timeout = timeout;
     // start watchdog
-     Watchdog& watchdog = Watchdog::get_instance();
-     watchdog.start(&VirtualWatchdog::process, Watchdog::elapsed_ms);
+    Watchdog &watchdog = Watchdog::get_instance();
+    core_util_critical_section_enter();
+    if (!_hw_initialized) {
+        // FIXME throw an error instad?
+        MBED_ASSERT(watchdog.is_running() == false);
+        // FIXME need to sort out the relation of timeout and Watchdog::start(timeout)
+        MBED_ASSERT(watchdog.start(&VirtualWatchdog::process, MBED_CONF_TARGET_WATCHDOG_TIMEOUT));
+        _hw_initialized = true;
+    }
+    core_util_critical_section_exit();
 }
 
 VirtualWatchdog::~VirtualWatchdog()
@@ -77,7 +85,7 @@ void VirtualWatchdog::add_to_list()
 void VirtualWatchdog::remove_from_list()
 {
     VirtualWatchdog *cur_ptr = _first,
-              *prev_ptr = NULL;
+                     *prev_ptr = NULL;
     while (cur_ptr != NULL) {
         if (cur_ptr == this) {
             if (cur_ptr == _first) {
@@ -104,7 +112,8 @@ void VirtualWatchdog::process()
         if (cur_ptr->_current_count > cur_ptr->_max_timeout) {
             system_reset();
         } else {
-            cur_ptr->_current_count += Watchdog::elapsed_ms;
+            // FIXME
+            // cur_ptr->_current_count += Watchdog::elapsed_ms;
         }
         cur_ptr = cur_ptr->_next;
     }

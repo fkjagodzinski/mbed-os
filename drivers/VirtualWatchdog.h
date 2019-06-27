@@ -114,6 +114,7 @@ private:
     bool _is_initialized; //To control start and stop functionality
     static VirtualWatchdog *_first; //List to store the user/threads who called start
     VirtualWatchdog *_next;
+    static bool _hw_initialized;
 };
 
 } // namespace mbed

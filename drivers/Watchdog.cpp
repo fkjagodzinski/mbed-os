@@ -17,7 +17,6 @@
 #ifdef DEVICE_WATCHDOG
 
 #include "drivers/Watchdog.h"
-#include "drivers/WatchdogManager.h"
 
 #define MS_TO_US(x) ((x) * 1000) //macro to convert millisecond to microsecond
 
@@ -33,24 +32,26 @@ Watchdog::~Watchdog()
 
 bool Watchdog::start(Callback<void()> func, uint32_t timeout)
 {
-    _callback = func;
-    watchdog_status_t sts;
-    MBED_ASSERT(MBED_CONF_TARGET_WATCHDOG_TIMEOUT < get_max_timeout());
+    MBED_ASSERT(timeout < get_max_timeout());
     core_util_critical_section_enter();
     if (_running) {
         core_util_critical_section_exit();
         return false;
     }
     watchdog_config_t config;
-    config.timeout_ms = MBED_CONF_TARGET_WATCHDOG_TIMEOUT;
-    sts = hal_watchdog_init(&config);
+    config.timeout_ms = timeout;
+    watchdog_status_t sts = hal_watchdog_init(&config);
     if (sts == WATCHDOG_STATUS_OK) {
         _running = true;
+        _callback = func;
     }
     core_util_critical_section_exit();
     if (_running) {
-        us_timestamp_t ticker_timeout = (MS_TO_US(((timeout <= 0) ? 1 : timeout)));
-        _ticker->attach(callback(this, &Watchdog::kick), ticker_timeout);
+        us_timestamp_t ticker_timeout = MS_TO_US(timeout / 2);
+        if (ticker_timeout == 0) {
+            ticker_timeout = 1;
+        }
+        _ticker->attach_us(callback(this, &Watchdog::kick), ticker_timeout);
     }
     return _running;
 }
