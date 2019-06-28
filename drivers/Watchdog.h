@@ -51,8 +51,6 @@ namespace mbed {
  */
 class Watchdog : private NonCopyable<Watchdog>  {
 public:
-    static const uint32_t watchdog_timeout = MBED_CONF_TARGET_WATCHDOG_TIMEOUT;
-
     /** As Watchdog might not stop ever, there is just one instance - we use single instance.
       * This ensures we keep Watchdog alive. To operate watchdog, use start/stop methods.
       */
@@ -76,7 +74,7 @@ public:
      *                 successfully. assert if one of the input parameters is out of range for the current platform.
      *                 false if watchdog timer was not started
      */
-    bool start(Callback<void(uint32_t)> func = NULL, uint32_t timeout = watchdog_timeout);
+    bool start(Callback<void(uint32_t)> func = NULL, uint32_t timeout = MBED_CONF_TARGET_WATCHDOG_TIMEOUT);
 
     /** Stops the watchdog timer
      *

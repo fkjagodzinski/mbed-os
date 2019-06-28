@@ -56,7 +56,7 @@ public:
     /** Constructor configured with timeout and name for this software watchdog instance.
      *
      */
-    VirtualWatchdog(uint32_t timeout = 1, const char *const str = NULL);
+    VirtualWatchdog(uint32_t timeout = 1000, const char *const str = NULL);
     ~VirtualWatchdog();
 public:
 
@@ -105,7 +105,7 @@ protected :
       */
     void remove_from_list();
 private:
-    uint32_t _max_timeout; //_max_timeout initialized via constructor while creating instance of this class
+    uint32_t _timeout; //_timeout initialized via constructor while creating instance of this class
     const char *_name; //To store the details of user
     uint32_t _current_count; //this parameter is used to reset everytime threads/user calls kick
     bool _is_initialized; //To control start and stop functionality
