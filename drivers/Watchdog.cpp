@@ -86,7 +86,7 @@ void Watchdog::kick()
     core_util_critical_section_exit();
 
     if (_callback) {
-        _callback(_ticker_timeout);
+        _callback(_ticker_timeout / 1000);
     }
 }
 
