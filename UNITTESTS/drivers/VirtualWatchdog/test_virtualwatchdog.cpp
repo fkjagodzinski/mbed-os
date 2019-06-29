@@ -108,6 +108,7 @@ TEST_F(TestVirtualWatchdog, virtualwdog_start_process_pass)
     mbed::VirtualWatchdog watchdog(500, "watchdog_unittest");
     watchdog.start();
     watchdog.kick();
+    mbed::VirtualWatchdog::process();
     watchdog.stop();
     EXPECT_EQ(0, TestVirtualWatchdog::expect_assert_count);
     EXPECT_EQ(0, TestVirtualWatchdog::expect_reset_count);
@@ -119,7 +120,11 @@ TEST_F(TestVirtualWatchdog, virtualwdog_start_process_fail)
     mbed::VirtualWatchdog watchdog1(500, "watchdog_unittest-1");
     watchdog.start();
     watchdog1.start();
+    mbed::VirtualWatchdog::process();
+    mbed::VirtualWatchdog::process();
     watchdog1.kick();
+    mbed::VirtualWatchdog::process();
+    mbed::VirtualWatchdog::process();
     watchdog.stop();
     watchdog1.stop();
     EXPECT_EQ(0, TestVirtualWatchdog::expect_assert_count);
