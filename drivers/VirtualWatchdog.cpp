@@ -52,7 +52,7 @@ VirtualWatchdog::VirtualWatchdog(uint32_t timeout, const char *const str): _name
         if (_ticker_timeout == 0) {
             _ticker_timeout = 1;
         }
-        _ticker->attach_us(callback(this, &VirtualWatchdog::process), _ticker_timeout);
+        _ticker->attach_us(callback(&VirtualWatchdog::process), _ticker_timeout);
         _is_hw_watchdog_running = true;
     }
 }

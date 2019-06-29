@@ -93,6 +93,12 @@ public:
      */
     void kick();
 
+    /** Periodic ticker handler to go through all the registered user/threads of watchdog.
+     *
+     * Otherwise, the system resets.
+     */
+    static void process();
+
 protected:
 
     /** Use add_to_list to store the registered user in the list.
@@ -107,12 +113,6 @@ protected:
     void remove_from_list();
 
 private:
-    /** Periodic ticker handler to go through all the registered user/threads of watchdog.
-     *
-     * Otherwise, the system resets.
-     */
-    void process();
-
     uint32_t _timeout; //_timeout initialized via constructor while creating instance of this class
     const char *_name; //To store the details of user
     uint32_t _current_count; //this parameter is used to reset everytime threads/user calls kick
