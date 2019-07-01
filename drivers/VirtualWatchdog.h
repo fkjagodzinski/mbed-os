@@ -18,130 +18,88 @@
 #ifndef MBED_VIRTUAL_WATCHDOG_H
 #define MBED_VIRTUAL_WATCHDOG_H
 
-#ifdef DEVICE_WATCHDOG
-
-#include <cstdio>
-#include "platform/mbed_error.h"
-#include "platform/mbed_critical.h"
-#include "platform/mbed_power_mgmt.h"
-#include "platform/mbed_assert.h"
-#include "platform/SingletonPtr.h"
-#include "drivers/Watchdog.h"
+#include "platform/NonCopyable.h"
 
 #if DEVICE_LPTICKER
-#include "drivers/LowPowerTicker.h"
+#include "drivers/LowPowerTimeout.h"
 #else
-#include "drivers/Ticker.h"
+#include "drivers/Timeout.h"
 #endif
 namespace mbed {
 
 /** \addtogroup drivers */
-
-/** VirtualWatchdog should be used for applications where you use multiple services requiring watchdog functionality.
- *   Use `Watchdog` driver for simple uses cases like bootloader. Do not use both drivers at the same time - VirtualWatchdog will error
- *   if it is not the only owner of the watchdog.
+/**
+ * A software watchdog timer that will reset the system if not kicked within a
+ * given timeout.
  *
- *  A system timer that will reset the system in the case of system failures or
- *  malfunctions.
+ * Multiple instances of this class may exist independently. Use these software
+ * watchdogs for applications where you use multiple services requiring
+ * watchdog functionality.
+ *
+ * For the watchdog peripheral driver, see drivers/Watchdog.h. This driver
+ * provides an interface to the watchdog hardware.
+ *
+ * @see Watchdog
+ *
+ * @note
+ * You may use multiple instances of VirtualWatchdog (for multiple software
+ * services) together with one hardware Watchdog (for general system failures).
  *
  * Example:
  * @code
  *
- * Example:
- * @code
- *
- * VirtualWatchdog virtual_watchdog(300,"Software Watchdog");
+ * VirtualWatchdog virtual_watchdog(300);
  * virtual_watchdog.start();
  *
  * while (true) {
  *    virtual_watchdog.kick();
- *
  *    // Application code
  * }
  * @endcode
  * @ingroup drivers
  */
-class VirtualWatchdog {
+class VirtualWatchdog : private NonCopyable<VirtualWatchdog> {
 public:
-
-    /** Constructor configured with timeout and name for this software watchdog instance.
+    /** Constructor for this software watchdog instance.
      *
-     * Note, the first instance of VirtualWatchog configures the hardware watchdog peripheral (uses timeout value passed here).
-     * 
-     *  @param timeout Timer timeout
-     *  @param str The name for this watchdog timer
-     *
+     *  @param timeout The timeout of this software watchdog in milliseconds.
      */
-    VirtualWatchdog(uint32_t timeout = 1000, const char *const str = NULL);
+    VirtualWatchdog(uint32_t timeout = 1000);
 
     ~VirtualWatchdog();
-public:
 
-    /** Start an independent watchdog timer with specified parameters in the constructor.
+    /** Start this software watchdog timer with parameters specified in the constructor.
      *
-     * Assert for multiple calls of start.
+     * If this software watchdog is already running, this function does nothing.
      */
     void start();
 
-    /** This stops the watchdog timer.
+    /** Stop this software watchdog timer.
      *
-     * Calling this function disables any running
-     * watchdog timers if the platform supports them.
-     *
-     * Assert without calling start.
+     * If this software watchdog is not running, this function does nothing.
      */
     void stop();
 
-    /** This function refreshes the watchdog timer.
+    /** Refresh this software watchdog timer.
      *
      * Call this function periodically before the watchdog times out.
      * Otherwise, the system resets.
      *
-     * If the watchdog timer is not running, this function does nothing.
+     * If this software watchdog is not running, this function does nothing.
      */
     void kick();
 
-protected:
-
-    /** Use add_to_list to store the registered user in the list.
-      * This API is only used to call from start.
-      */
-    void add_to_list();
-
-    /** Use remove_from_list to remove the entry from the list.
-      * This API is only used to call from stop.
-      *
-      */
-    void remove_from_list();
-
 private:
-    /** Periodic ticker handler to go through all the registered user/threads of watchdog.
-     *
-     * Otherwise, the system resets.
-     */
-    void process();
-
-    uint32_t _timeout; //_timeout initialized via constructor while creating instance of this class
-    const char *_name; //To store the details of user
-    uint32_t _current_count; //this parameter is used to reset everytime threads/user calls kick
-    bool _is_initialized; //To control start and stop functionality
-    static bool _is_hw_watchdog_running; // track we are the first owner of watchdog
-    static VirtualWatchdog *_first; //List to store the user/threads who called start
-    VirtualWatchdog *_next;
-
+    void _timeout_handler();
+    us_timestamp_t _reset_timeout_us;
+    bool _is_running;
 #if DEVICE_LPTICKER
-    /** Create singleton instance of LowPowerTicker for watchdog periodic call back of kick.
-     */
-    static SingletonPtr<LowPowerTicker> _ticker;
+    LowPowerTimeout _timeout;
 #else
-    /** Create singleton instance of Ticker for watchdog periodic call back of kick.
-     */
-    static SingletonPtr<Ticker> _ticker;
+    Timeout _timeout;
 #endif
-    static us_timestamp_t _ticker_timeout;
 };
 
 } // namespace mbed
 
-#endif // DEVICE_WATCHDOG
 #endif // MBED_VIRTUAL_WATCHDOG_H
