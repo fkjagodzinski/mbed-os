@@ -30,8 +30,20 @@
 namespace mbed {
 
 /** \addtogroup drivers */
-/** Hardware system timer that will reset the system in the case of system failures or
- *  malfunctions. There is only one instance in the system (for multiple system timers, see VirtualWatchdog driver).
+/**
+ * A hardware watchdog timer that will reset the system if not kicked within a
+ * given timeout.
+ *
+ * There is only one instance in the system. Use Watchdog::get_instance() to
+ * obtain a reference.
+ *
+ * For multiple software watchdog timers, see drivers/VirtualWatchdog.h.
+ *
+ * @see VirtualWatchdog
+ *
+ * @note
+ * You may use multiple instances of VirtualWatchdog (for multiple software
+ * services) together with one hardware Watchdog (for general system failures).
  *
  * Example:
  * @code
