@@ -27,12 +27,12 @@
 #include "unity/unity.h"
 #include "greentea-client/test_env.h"
 #include "mbed.h"
+#include "MbedTester.h"
+#include "pinmap.h"
+#include "gpio_irq_fpga_test.h"
 
 using namespace utest::v1;
 
-#include "mbed.h"
-#include "MbedTester.h"
-#include "pinmap.h"
 
 static uint32_t call_counter;
 void test_gpio_irq_handler(uint32_t id, gpio_irq_event event)
@@ -47,7 +47,7 @@ MbedTester tester(form_factor, restricted);
 #define WAIT() wait_us(10)
 
 
-void gpio_irq_test(PinName pin)
+void fpga_gpio_irq_test(PinName pin)
 {
     gpio_t gpio;
     // configure pin as input
@@ -246,7 +246,7 @@ void gpio_irq_test(PinName pin)
 }
 
 
-void gpio_irq_test()
+void fpga_gpio_irq_test()
 {
     for (uint32_t i = 0; i < form_factor->count; i++) {
         const PinName test_pin = form_factor->pins[i];
@@ -261,7 +261,7 @@ void gpio_irq_test()
         tester.pin_map_set(test_pin, MbedTester::LogicalPinGPIO0);
 
         printf("GPIO irq test on pin %3s (%3i)\r\n", pinmap_ff_default_pin_to_string(test_pin), test_pin);
-        gpio_irq_test(test_pin);
+        fpga_gpio_irq_test(test_pin);
     }
 }
 
@@ -280,7 +280,7 @@ utest::v1::status_t teardown(const Case *const source, const size_t passed, cons
 }
 
 Case cases[] = {
-    Case("GPIO - irq test", setup, gpio_irq_test, teardown)
+    Case("GPIO - irq test", setup, fpga_gpio_irq_test, teardown)
 };
 
 utest::v1::status_t greentea_test_setup(const size_t number_of_cases)

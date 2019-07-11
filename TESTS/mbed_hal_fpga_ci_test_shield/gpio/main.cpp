@@ -25,11 +25,12 @@
 #include "unity/unity.h"
 #include "greentea-client/test_env.h"
 #include "mbed.h"
+#include "MbedTester.h"
+#include "pinmap.h"
+#include "gpio_fpga_test.h"
 
 using namespace utest::v1;
 
-#include "MbedTester.h"
-#include "pinmap.h"
 
 const PinList *form_factor = pinmap_ff_default_pins();
 const PinList *restricted = pinmap_restricted_pins();
@@ -64,7 +65,7 @@ void gpio_inout_test(PinName pin)
     tester.gpio_write(MbedTester::LogicalPinGPIO0, 0, false);
 }
 
-void gpio_inout_test()
+void fpga_gpio_inout_test()
 {
     for (int i = 0; i < form_factor->count; i++) {
         const PinName test_pin = form_factor->pins[i];
@@ -98,7 +99,7 @@ utest::v1::status_t teardown(const Case *const source, const size_t passed, cons
 }
 
 Case cases[] = {
-    Case("GPIO - inout", setup, gpio_inout_test, teardown),
+    Case("GPIO - inout", setup, fpga_gpio_inout_test, teardown),
 };
 
 utest::v1::status_t greentea_test_setup(const size_t number_of_cases)
