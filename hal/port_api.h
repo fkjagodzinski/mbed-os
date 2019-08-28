@@ -54,12 +54,14 @@ PinName port_pin(PortName port, int pin_n);
  */
 void port_init(port_t *obj, PortName port, int mask, PinDirection dir);
 
+#if DEVICE_INPUT_PINMODE
 /** Set the input port mode
  *
  * @param obj  The port object
  * @param mode THe port mode to be set
  */
 void port_mode(port_t *obj, PinMode mode);
+#endif
 
 /** Set port direction (in/out)
  *

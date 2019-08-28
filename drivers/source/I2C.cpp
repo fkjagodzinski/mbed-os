@@ -143,8 +143,18 @@ void I2C::unlock()
 
 int I2C::recover(PinName sda, PinName scl)
 {
-    DigitalInOut pin_sda(sda, PIN_INPUT, PullNone, 1);
-    DigitalInOut pin_scl(scl, PIN_INPUT, PullNone, 1);
+    DigitalInOut pin_sda(sda);
+    pin_sda.input();
+#if DEVICE_INPUT_PINMODE
+    pin_sda.mode(PullNone);
+#endif
+    pin_sda.write(1);
+    DigitalInOut pin_scl(scl);
+    pin_scl.input();
+#if DEVICE_INPUT_PINMODE
+    pin_scl.mode(PullNone);
+#endif
+    pin_scl.write(1);
 
     // Return as SCL is low and no access to become master.
     if (pin_scl == 0) {
@@ -157,13 +167,19 @@ int I2C::recover(PinName sda, PinName scl)
     }
 
     // Send clock pulses, for device to recover 9
+#if DEVICE_INPUT_PINMODE
     pin_scl.mode(PullNone);
+#endif
     pin_scl.output();
     for (int count = 0; count < 10; count++) {
+#if DEVICE_INPUT_PINMODE
         pin_scl.mode(PullNone);
+#endif
         pin_scl = 0;
         wait_us(5);
+#if DEVICE_INPUT_PINMODE
         pin_scl.mode(PullUp);
+#endif
         pin_scl = 1;
         wait_us(5);
     }

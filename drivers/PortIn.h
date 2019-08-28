@@ -75,11 +75,13 @@ public:
         return port_read(&_port);
     }
 
+#if DEVICE_INPUT_PINMODE
     /** Set the input pin mode
      *
      *  @param mode PullUp, PullDown, PullNone, OpenDrain
      */
     void mode(PinMode mode);
+#endif
 
     /** A shorthand for read()
      */

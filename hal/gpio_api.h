@@ -64,12 +64,14 @@ int gpio_is_connected(const gpio_t *obj);
  */
 void gpio_init(gpio_t *obj, PinName pin);
 
+#if DEVICE_INPUT_PINMODE
 /** Set the input pin mode
  *
  * @param obj  The GPIO object (must be connected)
  * @param mode The pin mode to be set
  */
 void gpio_mode(gpio_t *obj, PinMode mode);
+#endif
 
 /** Set the pin direction
  *
@@ -102,6 +104,7 @@ int gpio_read(gpio_t *obj);
  */
 void gpio_init_in(gpio_t *gpio, PinName pin);
 
+#if DEVICE_INPUT_PINMODE
 /** Init the input pin and set the mode
  *
  * @param gpio  The GPIO object
@@ -109,6 +112,7 @@ void gpio_init_in(gpio_t *gpio, PinName pin);
  * @param mode  The pin mode to be set
  */
 void gpio_init_in_ex(gpio_t *gpio, PinName pin, PinMode mode);
+#endif
 
 /** Init the output pin as an output, with predefined output value 0
  *
@@ -126,6 +130,7 @@ void gpio_init_out(gpio_t *gpio, PinName pin);
  */
 void gpio_init_out_ex(gpio_t *gpio, PinName pin, int value);
 
+#if DEVICE_INPUT_PINMODE
 /** Init the pin to be in/out
  *
  * @param gpio      The GPIO object
@@ -135,6 +140,7 @@ void gpio_init_out_ex(gpio_t *gpio, PinName pin, int value);
  * @param value     The value to be set for an output pin
  */
 void gpio_init_inout(gpio_t *gpio, PinName pin, PinDirection direction, PinMode mode, int value);
+#endif
 
 /** Get the pins that support all GPIO tests
  *

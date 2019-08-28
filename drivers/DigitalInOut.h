@@ -45,6 +45,7 @@ public:
         gpio_init_in(&gpio, pin);
     }
 
+#if DEVICE_INPUT_PINMODE
     /** Create a DigitalInOut connected to the specified pin
      *
      *  @param pin DigitalInOut pin to connect to
@@ -57,6 +58,7 @@ public:
         // No lock needed in the constructor
         gpio_init_inout(&gpio, pin, direction, mode, value);
     }
+#endif
 
     /** Set the output, specified as 0 or 1 (int)
      *
@@ -89,11 +91,13 @@ public:
      */
     void input();
 
+#if DEVICE_INPUT_PINMODE
     /** Set the input pin mode
      *
      *  @param pull PullUp, PullDown, PullNone, OpenDrain
      */
     void mode(PinMode pull);
+#endif
 
     /** Return the output setting, represented as 0 or 1 (int)
      *

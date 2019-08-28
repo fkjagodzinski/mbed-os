@@ -34,6 +34,7 @@ InterruptIn::InterruptIn(PinName pin) : gpio(),
     gpio_init_in(&gpio, pin);
 }
 
+#if DEVICE_INPUT_PINMODE
 InterruptIn::InterruptIn(PinName pin, PinMode mode) :
     gpio(),
     gpio_irq(),
@@ -44,6 +45,7 @@ InterruptIn::InterruptIn(PinName pin, PinMode mode) :
     irq_init(pin);
     gpio_init_in_ex(&gpio, pin, mode);
 }
+#endif
 
 void InterruptIn::irq_init(PinName pin)
 {
@@ -62,12 +64,14 @@ int InterruptIn::read()
     return gpio_read(&gpio);
 }
 
+#if DEVICE_INPUT_PINMODE
 void InterruptIn::mode(PinMode pull)
 {
     core_util_critical_section_enter();
     gpio_mode(&gpio, pull);
     core_util_critical_section_exit();
 }
+#endif
 
 void InterruptIn::rise(Callback<void()> func)
 {

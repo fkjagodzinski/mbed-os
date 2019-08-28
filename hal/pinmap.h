@@ -44,7 +44,9 @@ typedef struct {
 } PeripheralList;
 
 void pin_function(PinName pin, int function);
+#if DEVICE_INPUT_PINMODE
 void pin_mode(PinName pin, PinMode mode);
+#endif
 
 uint32_t pinmap_peripheral(PinName pin, const PinMap *map);
 uint32_t pinmap_function(PinName pin, const PinMap *map);

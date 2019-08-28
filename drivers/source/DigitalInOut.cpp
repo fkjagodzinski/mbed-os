@@ -35,12 +35,14 @@ void DigitalInOut::input()
     core_util_critical_section_exit();
 }
 
+#if DEVICE_INPUT_PINMODE
 void DigitalInOut::mode(PinMode pull)
 {
     core_util_critical_section_enter();
     gpio_mode(&gpio, pull);
     core_util_critical_section_exit();
 }
+#endif
 
 DigitalInOut &DigitalInOut::operator= (DigitalInOut &rhs)
 {

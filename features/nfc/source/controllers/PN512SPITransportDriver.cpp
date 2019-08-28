@@ -29,9 +29,12 @@ using namespace mbed::nfc;
 PN512SPITransportDriver::PN512SPITransportDriver(PinName mosi, PinName miso, PinName sclk, PinName ssel, PinName irq, PinName rst) :
     _spi(mosi, miso, sclk),
     _ssel(ssel, 1),
-    _irq(irq, PullNone),
+    _irq(irq),
     _rst(rst, 1)
 {
+#if DEVICE_INPUT_PINMODE
+    _irq.mode(PullNone);
+#endif
 
     // Use SPI mode 0
     _spi.format(8, 0);

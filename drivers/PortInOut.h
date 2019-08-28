@@ -71,11 +71,13 @@ public:
      */
     void input();
 
+#if DEVICE_INPUT_PINMODE
     /** Set the input pin mode
      *
      *  @param mode PullUp, PullDown, PullNone, OpenDrain
      */
     void mode(PinMode mode);
+#endif
 
     /** A shorthand for write()
      * \sa PortInOut::write()

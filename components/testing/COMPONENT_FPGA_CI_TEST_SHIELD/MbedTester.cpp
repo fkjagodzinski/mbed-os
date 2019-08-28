@@ -2213,8 +2213,18 @@ bool MbedTester::_find_control_indexes(PhysicalIndex &clk_out, PhysicalIndex &mo
         // Free CLK and MOSI pins found. Mark them as unavailable
         allowed.clear(clk_index);
         allowed.clear(mosi_index);
-        mbed::DigitalInOut clk(_form_factor.get(clk_index), PIN_OUTPUT, ::PullNone, 0);
-        mbed::DigitalInOut mosi(_form_factor.get(mosi_index), PIN_OUTPUT, ::PullNone, 0);
+        mbed::DigitalInOut clk(_form_factor.get(clk_index));
+        clk.output();
+#if DEVICE_INPUT_PINMODE
+        clk.mode(::PullNone);
+#endif
+        clk.write(0);
+        mbed::DigitalInOut mosi(_form_factor.get(mosi_index));
+        mosi.output();
+#if DEVICE_INPUT_PINMODE
+        mosi.mode(::PullNone);
+#endif
+        mosi.write(0);
 
         for (uint8_t miso_index = 0; miso_index < max_pins; miso_index++) {
             if (!allowed.get(miso_index)) {
@@ -2267,8 +2277,18 @@ bool MbedTester::_find_control_indexes(PhysicalIndex &clk_out, PhysicalIndex &mo
 
 void MbedTester::_setup_control_pins()
 {
-    _clk = new  mbed::DigitalInOut(_form_factor.get(_clk_index), PIN_OUTPUT, ::PullNone, 0);
-    _mosi = new mbed::DigitalInOut(_form_factor.get(_mosi_index), PIN_OUTPUT, ::PullNone, 0);
+    _clk = new  mbed::DigitalInOut(_form_factor.get(_clk_index));
+    _clk->output();
+#if DEVICE_INPUT_PINMODE
+    _clk->mode(::PullNone);
+#endif
+    _clk->write(0);
+    _mosi = new mbed::DigitalInOut(_form_factor.get(_mosi_index));
+    _mosi->output();
+#if DEVICE_INPUT_PINMODE
+    _mosi->mode(::PullNone);
+#endif
+    _mosi->write(0);
     _miso = new  mbed::DigitalInOut(_form_factor.get(_miso_index));
     _aux = new  mbed::DigitalInOut(_form_factor.get(_aux_index));
 }

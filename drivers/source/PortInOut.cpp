@@ -45,12 +45,14 @@ void PortInOut::input()
     core_util_critical_section_exit();
 }
 
+#if DEVICE_INPUT_PINMODE
 void PortInOut::mode(PinMode mode)
 {
     core_util_critical_section_enter();
     port_mode(&_port, mode);
     core_util_critical_section_exit();
 }
+#endif
 
 } // namespace mbed
 

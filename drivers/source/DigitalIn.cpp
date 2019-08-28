@@ -21,11 +21,13 @@
 
 namespace mbed {
 
+#if DEVICE_INPUT_PINMODE
 void DigitalIn::mode(PinMode pull)
 {
     core_util_critical_section_enter();
     gpio_mode(&gpio, pull);
     core_util_critical_section_exit();
 }
+#endif
 
 } // namespace mbed

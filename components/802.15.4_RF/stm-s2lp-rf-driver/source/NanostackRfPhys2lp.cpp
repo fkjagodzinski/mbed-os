@@ -393,7 +393,9 @@ static void rf_disable_all_interrupts(void)
 static void rf_enable_gpio_interrupt(void)
 {
     rf_enable_gpio_signal(INTERRUPT_GPIO, NIRQ, DIG_OUT_HIGH);
+#if DEVICE_INPUT_PINMODE
     INT_IN_GPIO.mode(PullUp);
+#endif
     INT_IN_GPIO.fall(&rf_interrupt_handler);
     INT_IN_GPIO.enable_irq();
 }

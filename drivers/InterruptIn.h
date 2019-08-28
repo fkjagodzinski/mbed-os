@@ -72,6 +72,7 @@ public:
      */
     InterruptIn(PinName pin);
 
+#if DEVICE_INPUT_PINMODE
     /** Create an InterruptIn connected to the specified pin,
      *  and the pin configured to the specified mode.
      *
@@ -82,6 +83,7 @@ public:
      *
      */
     InterruptIn(PinName pin, PinMode mode);
+#endif
 
     virtual ~InterruptIn();
 
@@ -148,12 +150,14 @@ public:
         core_util_critical_section_exit();
     }
 
+#if DEVICE_INPUT_PINMODE
     /** Set the input pin mode
      *
      *  @param pull PullUp, PullDown, PullNone, PullDefault
      *  See PinNames.h for your target for definitions)
      */
     void mode(PinMode pull);
+#endif
 
     /** Enable IRQ. This method depends on hardware implementation, might enable one
      *  port interrupts. For further information, check gpio_irq_enable().

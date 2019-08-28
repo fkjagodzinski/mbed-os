@@ -101,6 +101,7 @@ void BusInOut::input()
     unlock();
 }
 
+#if DEVICE_INPUT_PINMODE
 void BusInOut::mode(PinMode pull)
 {
     lock();
@@ -111,6 +112,7 @@ void BusInOut::mode(PinMode pull)
     }
     unlock();
 }
+#endif
 
 BusInOut &BusInOut::operator= (int v)
 {

@@ -68,6 +68,7 @@ int BusIn::read()
     return v;
 }
 
+#if DEVICE_INPUT_PINMODE
 void BusIn::mode(PinMode pull)
 {
     lock();
@@ -78,6 +79,7 @@ void BusIn::mode(PinMode pull)
     }
     unlock();
 }
+#endif
 
 void BusIn::lock()
 {

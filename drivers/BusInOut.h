@@ -100,11 +100,13 @@ public:
      */
     void input();
 
+#if DEVICE_INPUT_PINMODE
     /** Set the input pin mode for all the pins in bus
      *
      *  @param pull PullUp, PullDown, PullNone
      */
     void mode(PinMode pull);
+#endif
 
     /** Binary mask of bus pins connected to actual pins (not NC pins)
      *  If bus pin is in NC state make corresponding bit will be cleared (set to 0), else bit will be set to 1

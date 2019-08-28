@@ -1557,7 +1557,9 @@ extern "C" void xcvr_spi_init(uint32_t instance)
 extern "C" void RF_IRQ_Init(void)
 {
     MBED_ASSERT(irq != NULL);
+#if DEVICE_INPUT_PINMODE
     irq->mode(PullUp);
+#endif
     irq->fall(&PHY_InterruptHandler);
 }
 
