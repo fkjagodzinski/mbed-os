@@ -320,8 +320,8 @@ typedef enum {
     USB_OTG_FS_ID = PA_10,
     USB_OTG_FS_NOE = PA_13,
     USB_OTG_FS_NOE_ALT0 = PC_9,
-    USB_OTG_FS_SOF = PA_14,
-    USB_OTG_FS_SOF_ALT0 = PA_8,
+    USB_OTG_FS_SOF = PA_8,
+    USB_OTG_FS_SOF_ALT0 = PA_14,
     USB_OTG_FS_VBUS = PA_9,
 
     /**** OSCILLATOR pins ****/
