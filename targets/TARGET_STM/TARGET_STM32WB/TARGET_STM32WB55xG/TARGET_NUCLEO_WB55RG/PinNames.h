@@ -151,7 +151,7 @@ typedef enum {
     SPI_CS      = D10,
     PWM_OUT     = D9,
 
-    /**** USB pins ****/
+    /**** USB FS pins ****/
     USB_DM = PA_11,
     USB_DP = PA_12,
     USB_NOE = PA_13,
