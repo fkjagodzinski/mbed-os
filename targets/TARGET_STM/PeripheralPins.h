@@ -34,6 +34,8 @@
 #include "pinmap.h"
 #include "PeripheralNames.h"
 
+#define GPIO_AF_NONE 0
+
 //*** ADC ***
 #if DEVICE_ANALOGIN
 extern const PinMap PinMap_ADC[];
@@ -88,5 +90,21 @@ extern const PinMap PinMap_QSPI_DATA3[];
 extern const PinMap PinMap_QSPI_SCLK[];
 extern const PinMap PinMap_QSPI_SSEL[];
 #endif
+
+#if DEVICE_USBDEVICE
+
+#if defined (USB)
+extern const PinMap PinMap_USB[];
+
+#else /* USB */
+#define USB_NO_OTG     0
+#define USB_FS         1
+#define USB_HS         2
+#define USB_FS_WITH_HS 3
+extern const PinMap PinMap_USB_OTG_HS[];
+extern const PinMap PinMap_USB_OTG_FS[];
+
+#endif /* USB */
+#endif /* DEVICE_USBDEVICE */
 
 #endif
