@@ -19,6 +19,8 @@
 
 #include "mbed.h"
 #include "USBPhy.h"
+#include "USBEndpoints_STM32.h"
+#include "PeripheralPins.h"
 
 #if defined(TARGET_DISCO_F746NG)
 #if (MBED_CONF_TARGET_USB_SPEED == 1) // Defined in json configuration file
@@ -28,24 +30,22 @@
 #endif
 #endif
 
-#if defined(TARGET_DISCO_F429ZI) || \
-    defined(TARGET_DISCO_F769NI) || \
-    defined(TARGET_DISCO_F746NG_OTG_HS)
-#define USBHAL_IRQn  OTG_HS_IRQn
+#if !defined(MBED_CONF_TARGET_USB_SPEED)
+#if defined (USB)
+#define MBED_CONF_TARGET_USB_SPEED USB_NO_OTG
+#elif defined(USB_OTG_FS)
+#define MBED_CONF_TARGET_USB_SPEED USB_FS
 #else
-#define USBHAL_IRQn  OTG_FS_IRQn
+#define MBED_CONF_TARGET_USB_SPEED USB_HS
 #endif
+#endif /* !defined(MBED_CONF_TARGET_USB_SPEED) */
 
-#include "USBEndpoints_STM32.h"
-
-#define NB_ENDPOINT  4 // Must be a multiple of 4 bytes
-
-#define MAXTRANSFER_SIZE  0x200
-
-#define FIFO_USB_RAM_SIZE (MAXTRANSFER_SIZE + MAX_PACKET_SIZE_EP0 + MAX_PACKET_SIZE_EP1 + MAX_PACKET_SIZE_EP2 + MAX_PACKET_SIZE_EP3)
-
-#if (FIFO_USB_RAM_SIZE > 0x500)
-#error "FIFO dimensioning incorrect"
+#if (MBED_CONF_TARGET_USB_SPEED == USB_NO_OTG)
+#define USBHAL_IRQn  USB_IRQn
+#elif (MBED_CONF_TARGET_USB_SPEED == USB_FS)
+#define USBHAL_IRQn  OTG_FS_IRQn
+#else
+#define USBHAL_IRQn  OTG_HS_IRQn
 #endif
 
 class USBPhyHw : public USBPhy {
@@ -87,7 +87,7 @@ public:
     USBPhyEvents *events;
     bool sof_enabled;
 
-    uint8_t epComplete[2 * NB_ENDPOINT];
+    uint8_t epComplete[NUMBER_OF_PHYSICAL_ENDPOINTS];
     PCD_HandleTypeDef hpcd;
 
 private:
