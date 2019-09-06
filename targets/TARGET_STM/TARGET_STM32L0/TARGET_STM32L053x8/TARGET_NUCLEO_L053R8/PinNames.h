@@ -156,11 +156,11 @@ typedef enum {
     SPI_CS      = PB_6,
     PWM_OUT     = PB_3,
 
-    /**** USB pins ****/
+    /**** USB FS pins ****/
     USB_DM = PA_11,
     USB_DP = PA_12,
-    USB_NOE = PC_9,
-    USB_NOE_ALT0 = PA_13,
+    USB_NOE = PA_13,
+    USB_NOE_ALT0 = PC_9,
 
     /**** OSCILLATOR pins ****/
     RCC_OSC32_IN = PC_14,
