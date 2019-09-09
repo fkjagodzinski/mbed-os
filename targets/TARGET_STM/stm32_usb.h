@@ -19,7 +19,7 @@
 
 #include "mbed.h"
 #include "USBPhy.h"
-#include "USBEndpoints_STM32.h"
+#include "stm32_usb_endpoints.h"
 #include "PeripheralPins.h"
 
 #if defined(TARGET_DISCO_F746NG)

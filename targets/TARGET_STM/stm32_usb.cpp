@@ -16,7 +16,7 @@
 
 #if DEVICE_USBDEVICE
 
-#include "USBPhyHw.h"
+#include "stm32_usb.h"
 #include "pinmap.h"
 
 /* endpoint conversion macros */
