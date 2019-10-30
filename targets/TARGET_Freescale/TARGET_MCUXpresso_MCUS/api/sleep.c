@@ -20,15 +20,21 @@
 
 extern bool serial_check_tx_ongoing();
 
+extern void dbgpin_sleep(int val);
+extern void dbgpin_deepsleep(int val);
+
 void hal_sleep(void)
 {
+    dbgpin_sleep(1);
     SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
 
     SMC_SetPowerModeWait(SMC);
+    dbgpin_sleep(0);
 }
 
 void hal_deepsleep(void)
 {
+    dbgpin_deepsleep(1);
 #if (defined(FSL_FEATURE_SOC_MCG_COUNT) && FSL_FEATURE_SOC_MCG_COUNT)
 #if (defined(FSL_FEATURE_MCG_HAS_PLL) && FSL_FEATURE_MCG_HAS_PLL)
     smc_power_state_t original_power_state;
@@ -39,6 +45,7 @@ void hal_deepsleep(void)
 
     /* Check if any of the UART's is transmitting data */
     if (serial_check_tx_ongoing()) {
+        dbgpin_deepsleep(0);
         return;
     }
 
@@ -63,4 +70,5 @@ void hal_deepsleep(void)
     }
 #endif // FSL_FEATURE_MCG_HAS_PLL
 #endif // FSL_FEATURE_SOC_MCG_COUNT
+    dbgpin_deepsleep(0);
 }

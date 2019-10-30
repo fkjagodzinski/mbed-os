@@ -82,6 +82,36 @@ struct testcase_data {
     uint32_t received_data;
 };
 
+DigitalOut d0(D0, 0);
+extern "C" void dbgpin_wdg_init(int val)
+{
+    d0.write(val);
+}
+
+DigitalOut d1(D1, 0);
+extern "C" void dbgpin_wdg_kick(int val)
+{
+    d1.write(val);
+}
+
+DigitalOut d2(D2, 0);
+extern "C" void dbgpin_wdg_stop(int val)
+{
+    d2.write(val);
+}
+
+DigitalOut d3(D3, 0);
+extern "C" void dbgpin_sleep(int val)
+{
+    d3.write(val);
+}
+
+DigitalOut d4(D4, 0);
+extern "C" void dbgpin_deepsleep(int val)
+{
+    d4.write(val);
+}
+
 testcase_data current_case;
 
 Thread wdg_kicking_thread(osPriorityNormal, 768);

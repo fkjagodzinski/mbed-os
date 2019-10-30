@@ -65,8 +65,13 @@ static inline void wait_WCT(void) {
   wait_us(WCT_us);
 }
 
+extern void dbgpin_wdg_init(int val);
+extern void dbgpin_wdg_kick(int val);
+extern void dbgpin_wdg_stop(int val);
+
 watchdog_status_t hal_watchdog_init(const watchdog_config_t *config)
 {
+  dbgpin_wdg_init(1);
   wdog_config_t cfg;
   cfg.enableWdog = true;
   cfg.clockSource = kWDOG_LpoClockSource;
@@ -90,19 +95,24 @@ watchdog_status_t hal_watchdog_init(const watchdog_config_t *config)
   WDOG_Init(WDOG, &cfg);
   wait_WCT(); // Updates in the write-once registers take effect only after the WCT window closes.
 
+  dbgpin_wdg_init(0);
   return WATCHDOG_STATUS_OK;
 }
 
 void hal_watchdog_kick(void)
 {
+  dbgpin_wdg_kick(1);
   WDOG_Refresh(WDOG);
+  dbgpin_wdg_kick(0);
 }
 
 watchdog_status_t hal_watchdog_stop(void)
 {
+  dbgpin_wdg_stop(1);
   WDOG_Deinit(WDOG);
   wait_WCT(); // Updates in the write-once registers take effect only after the WCT window closes.
 
+  dbgpin_wdg_stop(0);
   return WATCHDOG_STATUS_OK;
 }
 
